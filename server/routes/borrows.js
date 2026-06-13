@@ -9,6 +9,7 @@ router.get('/', (req, res) => {
   const instruments = readJSON('instruments.json', []);
   const users = readJSON('users.json', []);
   const reviews = readJSON('reviews.json', []);
+  const handoverPoints = readJSON('handover_points.json', []);
   const { borrowerId, ownerId, status, currentUserId } = req.query;
   
   let result = borrows;
@@ -55,7 +56,8 @@ router.get('/', (req, res) => {
       canReviewOther,
       instrument: instruments.find(i => i.id === b.instrumentId) || null,
       borrower: users.find(u => u.id === b.borrowerId) || null,
-      owner: users.find(u => u.id === b.ownerId) || null
+      owner: users.find(u => u.id === b.ownerId) || null,
+      handoverPoint: handoverPoints.find(h => h.id === b.handoverPointId) || null
     };
   });
   
@@ -66,6 +68,7 @@ router.get('/:id', (req, res) => {
   const borrows = readJSON('borrows.json', []);
   const instruments = readJSON('instruments.json', []);
   const users = readJSON('users.json', []);
+  const handoverPoints = readJSON('handover_points.json', []);
   const borrow = borrows.find(b => b.id === req.params.id);
   
   if (!borrow) {
@@ -76,7 +79,8 @@ router.get('/:id', (req, res) => {
     ...borrow,
     instrument: instruments.find(i => i.id === borrow.instrumentId) || null,
     borrower: users.find(u => u.id === borrow.borrowerId) || null,
-    owner: users.find(u => u.id === borrow.ownerId) || null
+    owner: users.find(u => u.id === borrow.ownerId) || null,
+    handoverPoint: handoverPoints.find(h => h.id === borrow.handoverPointId) || null
   };
   
   res.json(result);

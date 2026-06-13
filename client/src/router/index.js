@@ -45,6 +45,12 @@ const routes = [
     meta: { title: '练琴打卡', requiresAuth: true }
   },
   {
+    path: '/handover-points',
+    name: 'HandoverPoints',
+    component: () => import('../views/HandoverPoints.vue'),
+    meta: { title: '安全交接点' }
+  },
+  {
     path: '/messages',
     name: 'Messages',
     component: () => import('../views/Messages.vue'),

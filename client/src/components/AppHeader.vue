@@ -23,6 +23,10 @@
           <el-icon><Calendar /></el-icon>
           <span>练琴打卡</span>
         </router-link>
+        <router-link to="/handover-points" class="nav-item" :class="{ active: $route.name === 'HandoverPoints' }">
+          <el-icon><Location /></el-icon>
+          <span>交接点</span>
+        </router-link>
       </nav>
       
       <div class="header-right">
@@ -76,6 +80,7 @@ import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '../stores/user'
 import { borrowApi, invitationApi } from '../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { HomeFilled, Goods, User, Calendar, Plus, Bell, ArrowDown, SwitchButton, Message, Location } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const router = useRouter()

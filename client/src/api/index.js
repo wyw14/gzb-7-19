@@ -68,4 +68,13 @@ export const recommendApi = {
   pieces: (userId) => api.get(`/recommendations/pieces/${userId}`)
 }
 
+export const handoverPointApi = {
+  list: (params) => api.get('/handover-points', { params }),
+  get: (id) => api.get(`/handover-points/${id}`),
+  create: (data) => api.post('/handover-points', data),
+  update: (id, data) => api.put(`/handover-points/${id}`, data),
+  remove: (id) => api.delete(`/handover-points/${id}`),
+  review: (id, data) => api.post(`/handover-points/${id}/review`, data)
+}
+
 export default api

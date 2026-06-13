@@ -111,7 +111,7 @@
       </div>
     </div>
     
-    <el-dialog v-model="showBorrow" title="申请借用" width="500px">
+    <el-dialog v-model="showBorrow" title="申请借用" width="600px">
       <el-form :model="borrowForm" label-width="90px">
         <el-form-item label="乐器">
           <span>{{ instrument.name }}</span>
@@ -126,6 +126,49 @@
             :disabled-date="disabledDate"
           />
         </el-form-item>
+        <el-form-item label="交接地点" required>
+          <div style="width: 100%">
+            <el-select v-model="borrowForm.handoverPointId" placeholder="请选择安全交接点" style="width: 100%" @change="onPointChange">
+              <el-option v-for="point in handoverPoints" :key="point.id" :value="point.id" :label="point.name">
+                <div class="point-option">
+                  <span class="point-icon">{{ getTypeIcon(point.type) }}</span>
+                  <div class="point-info">
+                    <div class="point-name">{{ point.name }}</div>
+                    <div class="point-addr">{{ point.address }}</div>
+                  </div>
+                  <span class="point-rating">
+                    <el-icon><Star /></el-icon>
+                    {{ point.rating }}
+                  </span>
+                </div>
+              </el-option>
+            </el-select>
+            <div v-if="selectedPoint" class="selected-point-info">
+              <div class="sp-header">
+                <span class="sp-icon">{{ getTypeIcon(selectedPoint.type) }}</span>
+                <div class="sp-detail">
+                  <div class="sp-name">{{ selectedPoint.name }}</div>
+                  <div class="sp-type">{{ selectedPoint.typeLabel }}</div>
+                </div>
+                <el-button size="small" type="primary" link @click="viewHandoverDetail(selectedPoint)">
+                  查看详情
+                </el-button>
+              </div>
+              <div class="sp-addr">
+                <el-icon><Location /></el-icon>
+                {{ selectedPoint.address }}
+              </div>
+              <div class="sp-hours">
+                <el-icon><Clock /></el-icon>
+                今日开放：{{ selectedPoint.openingHours[getTodayDay()] }}
+              </div>
+            </div>
+            <div class="tip">
+              <el-icon><InfoFilled /></el-icon>
+              <span>为保障交易安全，建议选择平台认证的安全交接点</span>
+            </div>
+          </div>
+        </el-form-item>
         <el-form-item label="借用目的">
           <el-input v-model="borrowForm.purpose" type="textarea" :rows="3" placeholder="请描述借用目的，如：练习演出曲目等" />
         </el-form-item>
@@ -136,6 +179,44 @@
       <template #footer>
         <el-button @click="showBorrow = false">取消</el-button>
         <el-button type="primary" :loading="submitting" @click="submitBorrow">提交申请</el-button>
+      </template>
+    </el-dialog>
+    
+    <el-dialog v-model="showHandoverDetail" :title="selectedHandoverPoint?.name" width="500px">
+      <div v-if="selectedHandoverPoint" class="handover-detail">
+        <div class="detail-section">
+          <h4><el-icon><Location /></el-icon> 地址</h4>
+          <p>{{ selectedHandoverPoint.address }}</p>
+        </div>
+        <div class="detail-section">
+          <h4><el-icon><Phone /></el-icon> 联系方式</h4>
+          <p>{{ selectedHandoverPoint.phone }} ({{ selectedHandoverPoint.contactPerson }})</p>
+        </div>
+        <div class="detail-section">
+          <h4><el-icon><Clock /></el-icon> 开放时间</h4>
+          <div class="hours-grid">
+            <div v-for="(hours, day) in selectedHandoverPoint.openingHours" :key="day" class="hours-row">
+              <span class="day-label">{{ getDayLabel(day) }}</span>
+              <span class="hours-value" :class="{ closed: hours === '休息' }">{{ hours }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="detail-section">
+          <h4><el-icon><CircleCheck /></el-icon> 设施服务</h4>
+          <div class="facility-list">
+            <span v-for="f in selectedHandoverPoint.facilities" :key="f" class="facility-item">
+              <el-icon><Check /></el-icon>
+              {{ f }}
+            </span>
+          </div>
+        </div>
+        <div class="detail-section">
+          <h4><el-icon><Document /></el-icon> 交接说明</h4>
+          <p class="notes">{{ selectedHandoverPoint.notes }}</p>
+        </div>
+      </div>
+      <template #footer>
+        <el-button @click="showHandoverDetail = false">关闭</el-button>
       </template>
     </el-dialog>
     
@@ -174,9 +255,9 @@
 import { ref, reactive, computed, onMounted, inject } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useUserStore } from '../stores/user'
-import { instrumentApi, borrowApi, invitationApi, reviewApi } from '../api'
+import { instrumentApi, borrowApi, invitationApi, reviewApi, handoverPointApi } from '../api'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Goods, Medal, Location, Wallet, ChatDotRound, Document, User, Star, ChatLineSquare } from '@element-plus/icons-vue'
+import { Goods, Medal, Location, Wallet, ChatDotRound, Document, User, Star, ChatLineSquare, Clock, Phone, CircleCheck, Check, InfoFilled } from '@element-plus/icons-vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -191,8 +272,13 @@ const submitting = ref(false)
 
 const borrowForm = reactive({
   dates: null,
-  purpose: ''
+  purpose: '',
+  handoverPointId: ''
 })
+
+const handoverPoints = ref([])
+const showHandoverDetail = ref(false)
+const selectedHandoverPoint = ref(null)
 
 const inviteForm = reactive({
   instrument: '',
@@ -203,6 +289,18 @@ const inviteForm = reactive({
 })
 
 const isOwner = computed(() => userStore.userId === instrument.value?.ownerId)
+
+const selectedPoint = computed(() => {
+  return handoverPoints.value.find(p => p.id === borrowForm.handoverPointId) || null
+})
+
+const getTodayDay = () => {
+  const days = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday']
+  return days[new Date().getDay()]
+}
+
+const onPointChange = (val) => {
+}
 
 const estimatedFee = computed(() => {
   if (!borrowForm.dates || !instrument.value) return 0
@@ -217,9 +315,10 @@ const disabledDate = (time) => {
 onMounted(async () => {
   try {
     instrument.value = await instrumentApi.get(route.params.id)
-    inviteForm.value.instrument = instrument.value.category
+    inviteForm.instrument = instrument.value.category
     
     ownerReviews.value = await reviewApi.list({ revieweeId: instrument.value.ownerId, targetType: 'user' })
+    handoverPoints.value = await handoverPointApi.list()
   } catch (e) {
     ElMessage.error('加载失败')
   }
@@ -235,6 +334,10 @@ const submitBorrow = async () => {
     ElMessage.warning('请选择借用日期')
     return
   }
+  if (!borrowForm.handoverPointId) {
+    ElMessage.warning('请选择交接地点')
+    return
+  }
   submitting.value = true
   try {
     const result = await borrowApi.create({
@@ -245,7 +348,8 @@ const submitBorrow = async () => {
       endDate: borrowForm.dates[1].toISOString().split('T')[0],
       purpose: borrowForm.purpose,
       depositPaid: instrument.value.deposit,
-      feeTotal: estimatedFee.value
+      feeTotal: estimatedFee.value,
+      handoverPointId: borrowForm.handoverPointId
     })
     ElMessage.success('借用申请已发送，请等待主人确认！')
     showBorrow.value = false
@@ -255,6 +359,35 @@ const submitBorrow = async () => {
   } finally {
     submitting.value = false
   }
+}
+
+const viewHandoverDetail = (point) => {
+  selectedHandoverPoint.value = point
+  showHandoverDetail.value = true
+}
+
+const getTypeIcon = (type) => {
+  const icons = {
+    music_school: '🎹',
+    cafe: '☕',
+    community: '🏢',
+    library: '📚',
+    venue: '🎸'
+  }
+  return icons[type] || '📍'
+}
+
+const getDayLabel = (day) => {
+  const labels = {
+    monday: '周一',
+    tuesday: '周二',
+    wednesday: '周三',
+    thursday: '周四',
+    friday: '周五',
+    saturday: '周六',
+    sunday: '周日'
+  }
+  return labels[day] || day
 }
 
 const submitInvite = async () => {
@@ -535,5 +668,180 @@ const submitInvite = async () => {
   .detail-grid {
     grid-template-columns: 1fr;
   }
+}
+
+.point-option {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+}
+
+.point-option .point-icon {
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.point-option .point-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.point-option .point-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.point-option .point-addr {
+  font-size: 12px;
+  color: var(--text-secondary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.point-option .point-rating {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: #f59e0b;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+
+.selected-point-info {
+  margin-top: 10px;
+  padding: 12px;
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+}
+
+.sp-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+}
+
+.sp-icon {
+  font-size: 24px;
+}
+
+.sp-detail {
+  flex: 1;
+}
+
+.sp-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+
+.sp-type {
+  font-size: 12px;
+  color: var(--primary-color);
+}
+
+.sp-addr,
+.sp-hours {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 4px;
+}
+
+.tip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 8px;
+  padding: 8px 12px;
+  background: #fef3c7;
+  border-radius: 6px;
+  font-size: 12px;
+  color: #92400e;
+}
+
+.tip .el-icon {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.handover-detail .detail-section {
+  margin-bottom: 16px;
+}
+
+.handover-detail .detail-section h4 {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 14px;
+  margin: 0 0 8px 0;
+  color: var(--text-secondary);
+}
+
+.handover-detail .detail-section p {
+  margin: 0;
+  color: var(--text-primary);
+  line-height: 1.6;
+}
+
+.handover-detail .hours-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.handover-detail .hours-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 6px 12px;
+  background: var(--bg-light);
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.handover-detail .day-label {
+  color: var(--text-secondary);
+}
+
+.handover-detail .hours-value {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.handover-detail .hours-value.closed {
+  color: var(--danger-color);
+}
+
+.handover-detail .facility-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.handover-detail .facility-item {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 4px 12px;
+  background: #ecfdf5;
+  color: #047857;
+  border-radius: 6px;
+  font-size: 13px;
+}
+
+.handover-detail .notes {
+  background: var(--bg-light);
+  padding: 12px;
+  border-radius: 8px;
+  font-size: 13px;
 }
 </style>

@@ -37,6 +37,14 @@
                     <span><el-icon><Calendar /></el-icon> {{ b.startDate }} 至 {{ b.endDate }}</span>
                     <span><el-icon><Wallet /></el-icon> 租金 ¥{{ b.feeTotal }} + 押金 ¥{{ b.depositPaid }}</span>
                   </div>
+                  <div class="handover-info" v-if="b.handoverPoint">
+                    <span class="handover-label">
+                      <el-icon><Location /></el-icon>
+                      交接地点：
+                    </span>
+                    <span class="handover-name">{{ b.handoverPoint.name }}</span>
+                    <span class="handover-addr">{{ b.handoverPoint.address }}</span>
+                  </div>
                   <p class="msg-body" v-if="b.purpose">借用目的：{{ b.purpose }}</p>
                   <div class="msg-actions" v-if="b.status === 'pending'">
                     <el-button type="success" size="small" @click="updateBorrow(b, 'confirmed')">
@@ -90,6 +98,14 @@
                   <div class="msg-meta">
                     <span><el-icon><Calendar /></el-icon> {{ b.startDate }} 至 {{ b.endDate }}</span>
                     <span><el-icon><Wallet /></el-icon> 租金 ¥{{ b.feeTotal }} + 押金 ¥{{ b.depositPaid }}</span>
+                  </div>
+                  <div class="handover-info" v-if="b.handoverPoint">
+                    <span class="handover-label">
+                      <el-icon><Location /></el-icon>
+                      交接地点：
+                    </span>
+                    <span class="handover-name">{{ b.handoverPoint.name }}</span>
+                    <span class="handover-addr">{{ b.handoverPoint.address }}</span>
                   </div>
                   <p class="msg-body" v-if="b.purpose">借用目的：{{ b.purpose }}</p>
                   <div class="msg-actions" v-if="b.status === 'borrowing'">
@@ -574,5 +590,36 @@ const submitReview = async () => {
 
 .empty-state.small .el-icon {
   font-size: 48px;
+}
+
+.handover-info {
+  display: flex;
+  align-items: flex-start;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #f0fdf4, #ecfdf5);
+  border: 1px solid #bbf7d0;
+  border-radius: 8px;
+  font-size: 13px;
+  margin-bottom: 10px;
+}
+
+.handover-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--success-color);
+  font-weight: 500;
+  flex-shrink: 0;
+}
+
+.handover-name {
+  color: var(--text-primary);
+  font-weight: 500;
+}
+
+.handover-addr {
+  color: var(--text-secondary);
 }
 </style>
